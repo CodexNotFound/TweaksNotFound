@@ -2,6 +2,8 @@
 
 It's still very early stages, expect crashes.
 
+## Current Features
+ - Collapsing chat
 
 ## Planned features
  - Increase/decrease Music frequency
