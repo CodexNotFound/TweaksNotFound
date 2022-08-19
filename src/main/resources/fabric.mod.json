@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "tweaks_not_found",
+  "version": "${version}",
+  "name": "TweaksNotFound",
+  "description": "Small tweaks not impacting gameplay",
+  "authors": [
+    "CodexNotFound"
+  ],
+  "contact": {},
+  "license": "unlicense",
+  "icon": "assets/tweaks_not_found/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "nl.codexnotfound.tweaks_not_found.client.TweaksNotFoundClient"
+    ],
+    "main": [
+      "nl.codexnotfound.tweaks_not_found.TweaksNotFound"
+    ]
+  },
+  "mixins": [
+    "tweaks_not_found.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.8",
+    "fabric": "*",
+    "minecraft": "1.19"
+  }
+}
