@@ -45,6 +45,7 @@ public class ChatMixin {
         var searchDistance = Math.min(COLLAPSE_CHAT_SEARCH_DISTANCE, messages.size());
         var newMessageText = message.getString();
         var sameMessageIndex = -1;
+        // See if the message has been send before
         for(int i=0; i<searchDistance; i++){
             var tempMessage = messages.get(i).getText().getString()
                     .replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "")
@@ -59,6 +60,7 @@ public class ChatMixin {
             return;
         }
 
+        // Decide the times the message has been send.
         var oldMessage = messages.get(sameMessageIndex);
         var match = COLLAPSE_CHAT_FORMAT_REGEX.matcher(oldMessage.getText().getString());
         var count = 2;
@@ -73,14 +75,23 @@ public class ChatMixin {
         var newChatText = message.append(countText);
 
         messages.remove(sameMessageIndex);
-        messages.add(0, new ChatHudLine<>(oldMessage.getCreationTick(), newChatText, oldMessage.getId()));
+        messages.add(0, new ChatHudLine<>(timestamp, newChatText, oldMessage.getId()));
 
         int width = MathHelper.floor(getWidth() / getChatScale());
         List<OrderedText> lines = ChatMessages.breakRenderedChatMessageLines(newChatText, width, this.client.textRenderer);
 
+        int sameVisibleMessageIndex = sameMessageIndex; // Use as fallback
+        for(int i=0; i<this.visibleMessages.size(); i++){
+            var visibleMessage = this.visibleMessages.get(i);
+            if(visibleMessage.getCreationTick() == oldMessage.getCreationTick()){
+                sameVisibleMessageIndex = i;
+                break;
+            }
+        }
+
         for (int i = 0; i < lines.size(); i++) {
             OrderedText orderedText = lines.get(i);
-            var absoluteLineIndex = sameMessageIndex+lines.size()-i-1;
+            var absoluteLineIndex = sameVisibleMessageIndex+i;
             this.visibleMessages.remove(absoluteLineIndex);
             this.visibleMessages.add(0, new ChatHudLine(timestamp, orderedText, messageId));
         }
