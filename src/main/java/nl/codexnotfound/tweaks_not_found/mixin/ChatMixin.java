@@ -12,8 +12,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -27,8 +29,16 @@ public class ChatMixin {
     private final int COLLAPSE_CHAT_SEARCH_DISTANCE = 5;
     private final String COLLAPSE_CHAT_FORMAT = " {×%d}";
     private final Pattern COLLAPSE_CHAT_FORMAT_REGEX = Pattern.compile(" \\{×(\\d+)}");
-    private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\d{2}:\\d{2} ");
-
+    private final String TIMESTAMP_FORMAT = "[%02d:%02d] ";
+    private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}] ");
+    @ModifyArgs(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At(value = "INVOKE", target="Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;I)V"))
+    private void modifyArgsAddMessage(org.spongepowered.asm.mixin.injection.invoke.arg.Args args){
+        MutableText msg = args.get(0);
+        var style = msg.getStyle();
+        var timeText = buildTimePrefix();
+        msg = timeText.append(msg.setStyle(style));
+        args.set(0, msg);
+    }
     @Inject(method = "addMessage(Lnet/minecraft/text/Text;IIZ)V", at = @At("HEAD"), cancellable = true)
     private void onAddMessage(Text msg, int messageId, int timestamp, boolean refresh, CallbackInfo ci){
         var message = (MutableText)msg;
@@ -41,7 +51,7 @@ public class ChatMixin {
                     .replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "")
                     .replaceAll(COLLAPSE_CHAT_FORMAT_REGEX.pattern(), "");
 
-            if(tempMessage.equals(newMessageText)) {
+            if(tempMessage.equals(newMessageText.replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), ""))) {
                 sameMessageIndex = i;
                 break;
             }
@@ -61,6 +71,7 @@ public class ChatMixin {
         var countText = MutableText
                 .of(new LiteralTextContent(String.format(COLLAPSE_CHAT_FORMAT, count)))
                 .setStyle(Style.EMPTY.withColor(TextColor.parse("yellow")));
+
         var newChatText = message.append(countText);
 
         messages.remove(sameMessageIndex);
@@ -85,6 +96,16 @@ public class ChatMixin {
             this.visibleMessages.add(0, new ChatHudLine(timestamp, orderedText, messageId));
         }
         ci.cancel();
+    }
+
+    private MutableText buildTimePrefix(){
+        var time = LocalTime.now();
+        var hours = time.getHour();
+        var minutes = time.getMinute();
+        var timeText = String.format(TIMESTAMP_FORMAT, hours, minutes);
+        return MutableText
+                .of(new LiteralTextContent(timeText));
+//                .setStyle(Style.EMPTY.withColor(TextColor.parse("aqua")));
     }
 
     private double getWidth(){
