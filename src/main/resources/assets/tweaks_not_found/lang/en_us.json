@@ -1,0 +1,8 @@
+{
+  "text.config.tweaks-not-found-config.title" : "TweaksNotFound",
+  "text.config.tweaks-not-found-config.option.showTimestamp" : "Prefix chat with timestamp",
+  "text.config.tweaks-not-found-config.section.chatCollapsing" : "Collapsing Repeated Chat",
+  "text.config.tweaks-not-found-config.option.enableChatCollapsing" : "Chat collapsing",
+  "text.config.tweaks-not-found-config.option.collapseDistance" : "Collapse distance",
+  "text.config.tweaks-not-found-config.option.nonCollapsingMessages" : "Ignore collapsing for"
+}

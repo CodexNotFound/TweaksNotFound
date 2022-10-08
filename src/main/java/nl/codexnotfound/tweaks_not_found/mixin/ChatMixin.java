@@ -6,6 +6,7 @@ import net.minecraft.client.gui.hud.ChatHudLine;
 import net.minecraft.client.util.ChatMessages;
 import net.minecraft.text.*;
 import net.minecraft.util.math.MathHelper;
+import nl.codexnotfound.tweaks_not_found.TweaksNotFound;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -26,34 +28,39 @@ public class ChatMixin {
     @Shadow @Final private List<ChatHudLine<Text>> messages;
     @Shadow @Final private List<ChatHudLine<OrderedText>> visibleMessages;
     @Shadow @Final private MinecraftClient client;
-    private final int COLLAPSE_CHAT_SEARCH_DISTANCE = 5;
+
     private final String COLLAPSE_CHAT_FORMAT = " {×%d}";
     private final Pattern COLLAPSE_CHAT_FORMAT_REGEX = Pattern.compile(" \\{×(\\d+)}");
     private final String TIMESTAMP_FORMAT = "[%02d:%02d] ";
     private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}] ");
 
-    private static final List<String> nonCollapsingMessages = List.of(
-            "\\o",
-            "o/"
-    );
-
     @ModifyArgs(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;I)V"))
     private void modifyArgsAddMessage(org.spongepowered.asm.mixin.injection.invoke.arg.Args args) {
-        MutableText msg = args.get(0);
-        var style = msg.getStyle();
-        var timeText = buildTimePrefix();
-        msg = timeText.append(msg.setStyle(style));
-        args.set(0, msg);
+        if(TweaksNotFound.CONFIG.showTimestamp()) {
+            MutableText msg = args.get(0);
+            var style = msg.getStyle();
+            var timeText = buildTimePrefix();
+            msg = timeText.append(msg.setStyle(style));
+            args.set(0, msg);
+        }
     }
 
     @Inject(method = "addMessage(Lnet/minecraft/text/Text;IIZ)V", at = @At("HEAD"), cancellable = true)
     private void onAddMessage(Text msg, int messageId, int timestamp, boolean refresh, CallbackInfo ci) {
+        if(!TweaksNotFound.CONFIG.enableChatCollapsing()){
+            return;
+        }
+
         var message = (MutableText) msg;
-        var searchDistance = Math.min(COLLAPSE_CHAT_SEARCH_DISTANCE, messages.size());
+        var searchDistance = Math.min(TweaksNotFound.CONFIG.collapseDistance(), messages.size());
         var newMessageText = message.getString();
         var newMessageTextCleanedUp = newMessageText.replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "").trim();
 
-        if (nonCollapsingMessages.stream().anyMatch(newMessageTextCleanedUp::contains)) {
+        // https://github.com/wisp-forest/owo-lib/issues/59
+        // Backslashes are not saved properly, allow backslashes using a replacement string "&bs&"
+        var nonCollapsingMessagesString = TweaksNotFound.CONFIG.nonCollapsingMessages().replaceAll("&bs&", "\\");
+        var nonCollapsingMessages = Arrays.stream(nonCollapsingMessagesString.split(";"));
+        if (nonCollapsingMessages.anyMatch(newMessageTextCleanedUp::contains)) {
             return;
         }
 
