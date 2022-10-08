@@ -1,13 +1,11 @@
 # TweaksNotFound
 
-It's still very early stages, expect crashes.
-
 ## Current Features
  - Collapsing chat
+ - Timestamps in front of chat messages
 
 ## Planned features
  - Increase/decrease Music frequency
- - Timestamps in front of chat messages
  - Hide command output (except whispers)
 
-Suggestions are welcome
+Suggestions for features are welcome
