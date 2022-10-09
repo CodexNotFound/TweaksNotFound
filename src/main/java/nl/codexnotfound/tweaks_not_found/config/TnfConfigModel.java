@@ -14,5 +14,5 @@ public class TnfConfigModel {
     public boolean enableChatCollapsing = true;
     @RangeConstraint(min = 1, max = 20)
     public int collapseDistance = 5;
-    public String nonCollapsingMessages = "\\o;o/";
+    public String nonCollapsingMessages = "";
 }
