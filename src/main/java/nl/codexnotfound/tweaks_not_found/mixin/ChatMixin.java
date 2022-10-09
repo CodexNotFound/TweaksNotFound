@@ -7,6 +7,7 @@ import net.minecraft.client.util.ChatMessages;
 import net.minecraft.text.*;
 import net.minecraft.util.math.MathHelper;
 import nl.codexnotfound.tweaks_not_found.TweaksNotFound;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,14 +30,12 @@ public class ChatMixin {
     @Shadow @Final private List<ChatHudLine<OrderedText>> visibleMessages;
     @Shadow @Final private MinecraftClient client;
 
-    private final String COLLAPSE_CHAT_FORMAT = " {×%d}";
     private final Pattern COLLAPSE_CHAT_FORMAT_REGEX = Pattern.compile(" \\{×(\\d+)}");
-    private final String TIMESTAMP_FORMAT = "[%02d:%02d] ";
     private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}] ");
 
     @ModifyArgs(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;I)V"))
     private void modifyArgsAddMessage(org.spongepowered.asm.mixin.injection.invoke.arg.Args args) {
-        if(TweaksNotFound.CONFIG.showTimestamp()) {
+        if (TweaksNotFound.CONFIG.showTimestamp()) {
             MutableText msg = args.get(0);
             var style = msg.getStyle();
             var timeText = buildTimePrefix();
@@ -47,25 +46,80 @@ public class ChatMixin {
 
     @Inject(method = "addMessage(Lnet/minecraft/text/Text;IIZ)V", at = @At("HEAD"), cancellable = true)
     private void onAddMessage(Text msg, int messageId, int timestamp, boolean refresh, CallbackInfo ci) {
-        if(!TweaksNotFound.CONFIG.enableChatCollapsing()){
+        if (!TweaksNotFound.CONFIG.enableChatCollapsing()) {
             return;
         }
-
         var message = (MutableText) msg;
         var searchDistance = Math.min(TweaksNotFound.CONFIG.collapseDistance(), messages.size());
         var newMessageText = message.getString();
         var newMessageTextCleanedUp = newMessageText.replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "").trim();
 
-        // https://github.com/wisp-forest/owo-lib/issues/59
-        // Backslashes are not saved properly, allow backslashes using a replacement string "&bs&"
-        var nonCollapsingMessagesString = TweaksNotFound.CONFIG.nonCollapsingMessages().replaceAll("&bs&", "\\");
-        var nonCollapsingMessages = Arrays.stream(nonCollapsingMessagesString.split(";"));
-        if (nonCollapsingMessages.anyMatch(newMessageTextCleanedUp::contains)) {
+        if (!shouldCollapseMessage(newMessageTextCleanedUp)) {
             return;
         }
 
+        var sameMessageIndex = findSameMessageIndex(searchDistance, newMessageTextCleanedUp);
+        if (sameMessageIndex == null) {
+            return;
+        }
+
+        var oldMessage = messages.get(sameMessageIndex);
+        MutableText countText = getNewCountText(oldMessage);
+
+        var newChatText = message.append(countText);
+        messages.remove((int) sameMessageIndex);
+        messages.add(0, new ChatHudLine<>(timestamp, newChatText, messageId));
+        var success = updateVisibleMessages(messageId, timestamp, oldMessage, newChatText);
+        if (success) {
+            ci.cancel();
+        }
+    }
+
+    private boolean updateVisibleMessages(int messageId, int timestamp, ChatHudLine<Text> oldMessage, MutableText newChatText) {
+        int width = MathHelper.floor(getWidth() / getChatScale());
+        List<OrderedText> lines = ChatMessages.breakRenderedChatMessageLines(newChatText, width, this.client.textRenderer);
+
+        int sameVisibleMessageIndex = -1;
+        for (int i = 0; i < this.visibleMessages.size(); i++) {
+            var visibleMessage = this.visibleMessages.get(i);
+            if (visibleMessage.getCreationTick() == oldMessage.getCreationTick()) {
+                sameVisibleMessageIndex = i;
+                break;
+            }
+        }
+
+        if (sameVisibleMessageIndex == -1) {
+            return false;
+        }
+
+        for (int i = 0; i < lines.size(); i++) {
+            OrderedText orderedText = lines.get(i);
+            var absoluteLineIndex = sameVisibleMessageIndex + i;
+            if (absoluteLineIndex >= 0 && absoluteLineIndex < this.visibleMessages.size()) {
+                this.visibleMessages.remove(absoluteLineIndex);
+                this.visibleMessages.add(0, new ChatHudLine<>(timestamp, orderedText, messageId));
+            }
+        }
+        return true;
+    }
+
+    private MutableText getNewCountText(ChatHudLine<Text> oldMessage) {
+        var COLLAPSE_CHAT_FORMAT = " {×%d}";
+
+        var match = COLLAPSE_CHAT_FORMAT_REGEX.matcher(oldMessage.getText().getString());
+        var count = 2;
+        if (match.find()) {
+            count = Integer.parseInt(match.group(1)) + 1;
+        }
+
+        return MutableText
+                .of(new LiteralTextContent(String.format(COLLAPSE_CHAT_FORMAT, count)))
+                .setStyle(Style.EMPTY.withColor(TextColor.parse("yellow")));
+    }
+
+    @Nullable
+    private Integer findSameMessageIndex(int searchDistance, String newMessageTextCleanedUp) {
         var sameMessageIndex = -1;
-        // See if the message has been send before
         for (int i = 0; i < searchDistance; i++) {
             var tempMessage = messages.get(i).getText().getString()
                     .replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "")
@@ -77,52 +131,25 @@ public class ChatMixin {
             }
         }
         if (sameMessageIndex == -1) {
-            return;
+            return null;
         }
+        return sameMessageIndex;
+    }
 
-        // Decide the times the message has been send.
-        var oldMessage = messages.get(sameMessageIndex);
-        var match = COLLAPSE_CHAT_FORMAT_REGEX.matcher(oldMessage.getText().getString());
-        var count = 2;
-        if (match.find()) {
-            count = Integer.parseInt(match.group(1)) + 1;
-        }
-
-        var countText = MutableText
-                .of(new LiteralTextContent(String.format(COLLAPSE_CHAT_FORMAT, count)))
-                .setStyle(Style.EMPTY.withColor(TextColor.parse("yellow")));
-
-        var newChatText = message.append(countText);
-
-        messages.remove(sameMessageIndex);
-        messages.add(0, new ChatHudLine<>(timestamp, newChatText, oldMessage.getId()));
-
-        int width = MathHelper.floor(getWidth() / getChatScale());
-        List<OrderedText> lines = ChatMessages.breakRenderedChatMessageLines(newChatText, width, this.client.textRenderer);
-
-        int sameVisibleMessageIndex = sameMessageIndex; // Use as fallback
-        for (int i = 0; i < this.visibleMessages.size(); i++) {
-            var visibleMessage = this.visibleMessages.get(i);
-            if (visibleMessage.getCreationTick() == oldMessage.getCreationTick()) {
-                sameVisibleMessageIndex = i;
-                break;
-            }
-        }
-
-        for (int i = 0; i < lines.size(); i++) {
-            OrderedText orderedText = lines.get(i);
-            var absoluteLineIndex = sameVisibleMessageIndex + i;
-            this.visibleMessages.remove(absoluteLineIndex);
-            this.visibleMessages.add(0, new ChatHudLine(timestamp, orderedText, messageId));
-        }
-        ci.cancel();
+    private static boolean shouldCollapseMessage(String newMessageTextCleanedUp) {
+        // https://github.com/wisp-forest/owo-lib/issues/59
+        // Backslashes are not saved properly, allow backslashes using a replacement string "&bs&"
+        var nonCollapsingMessagesString = TweaksNotFound.CONFIG.nonCollapsingMessages().replaceAll("&bs&", "\\");
+        var nonCollapsingMessages = Arrays.stream(nonCollapsingMessagesString.split(";"));
+        return nonCollapsingMessages.noneMatch(newMessageTextCleanedUp::contains);
     }
 
     private MutableText buildTimePrefix() {
+        var TIMESTAMP_FORMAT = "[%02d:%02d] ";
+
         var time = LocalTime.now();
-        var hours = time.getHour();
-        var minutes = time.getMinute();
-        var timeText = String.format(TIMESTAMP_FORMAT, hours, minutes);
+        var timeText = String.format(TIMESTAMP_FORMAT, time.getHour(), time.getMinute());
+
         return MutableText
                 .of(new LiteralTextContent(timeText));
 //                .setStyle(Style.EMPTY.withColor(TextColor.parse("aqua")));
