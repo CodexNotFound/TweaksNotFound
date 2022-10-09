@@ -49,29 +49,35 @@ public class ChatMixin {
         if (!TweaksNotFound.CONFIG.enableChatCollapsing()) {
             return;
         }
-        var message = (MutableText) msg;
-        var searchDistance = Math.min(TweaksNotFound.CONFIG.collapseDistance(), messages.size());
-        var newMessageText = message.getString();
-        var newMessageTextCleanedUp = newMessageText.replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "").trim();
+        // No matter what happens inside, if it fails it shouldn't break the chat.
+        // If exceptions happen the normal chat code should be called upon.
+        try {
+            var message = (MutableText) msg;
+            var searchDistance = Math.min(TweaksNotFound.CONFIG.collapseDistance(), messages.size());
+            var newMessageText = message.getString();
+            var newMessageTextCleanedUp = newMessageText.replaceFirst(TIMESTAMP_FORMAT_REGEX.pattern(), "").trim();
 
-        if (!shouldCollapseMessage(newMessageTextCleanedUp)) {
-            return;
-        }
+            if (!shouldCollapseMessage(newMessageTextCleanedUp)) {
+                return;
+            }
 
-        var sameMessageIndex = findSameMessageIndex(searchDistance, newMessageTextCleanedUp);
-        if (sameMessageIndex == null) {
-            return;
-        }
+            var sameMessageIndex = findSameMessageIndex(searchDistance, newMessageTextCleanedUp);
+            if (sameMessageIndex == null) {
+                return;
+            }
 
-        var oldMessage = messages.get(sameMessageIndex);
-        MutableText countText = getNewCountText(oldMessage);
+            var oldMessage = messages.get(sameMessageIndex);
+            MutableText countText = getNewCountText(oldMessage);
 
-        var newChatText = message.append(countText);
-        messages.remove((int) sameMessageIndex);
-        messages.add(0, new ChatHudLine<>(timestamp, newChatText, messageId));
-        var success = updateVisibleMessages(messageId, timestamp, oldMessage, newChatText);
-        if (success) {
-            ci.cancel();
+            var newChatText = message.append(countText);
+            messages.remove((int) sameMessageIndex);
+            messages.add(0, new ChatHudLine<>(timestamp, newChatText, messageId));
+            var success = updateVisibleMessages(messageId, timestamp, oldMessage, newChatText);
+            if (success) {
+                ci.cancel();
+            }
+        } catch (Exception ex) {
+            LOGGER.error(ex.getMessage(), ex);
         }
     }
 
