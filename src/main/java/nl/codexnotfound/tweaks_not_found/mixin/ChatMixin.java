@@ -145,8 +145,9 @@ public class ChatMixin {
     private static boolean shouldCollapseMessage(String newMessageTextCleanedUp) {
         // https://github.com/wisp-forest/owo-lib/issues/59
         // Backslashes are not saved properly, allow backslashes using a replacement string "&bs&"
-        var nonCollapsingMessagesString = TweaksNotFound.CONFIG.nonCollapsingMessages().replaceAll("&bs&", "\\");
-        var nonCollapsingMessages = Arrays.stream(nonCollapsingMessagesString.split(";"));
+        var nonCollapsingMessagesString = TweaksNotFound.CONFIG.nonCollapsingMessages().replace("&bs&", "\\");
+        var nonCollapsingMessages = Arrays.stream(nonCollapsingMessagesString.split(";"))
+                .filter(x -> x.trim().length() > 1);
         return nonCollapsingMessages.noneMatch(newMessageTextCleanedUp::contains);
     }
 
