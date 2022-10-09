@@ -1,8 +1,13 @@
 {
   "text.config.tweaks-not-found-config.title" : "TweaksNotFound",
+  "text.config.tweaks-not-found-config.section.timestamp" : "Timestamp",
   "text.config.tweaks-not-found-config.option.showTimestamp" : "Prefix chat with timestamp",
+  "text.config.tweaks-not-found-config.option.timeFormat" : "Time format",
+  "text.config.tweaks-not-found-config.option.timeFormat.value.twentyfour" : "[20:05]",
+  "text.config.tweaks-not-found-config.option.timeFormat.value.twelve" : "[08:05 PM]",
   "text.config.tweaks-not-found-config.section.chatCollapsing" : "Collapsing Repeated Chat",
   "text.config.tweaks-not-found-config.option.enableChatCollapsing" : "Chat collapsing",
   "text.config.tweaks-not-found-config.option.collapseDistance" : "Collapse distance",
-  "text.config.tweaks-not-found-config.option.nonCollapsingMessages" : "Ignore collapsing for"
+  "text.config.tweaks-not-found-config.option.nonCollapsingMessages" : "Ignore collapsing for",
+  "text.config.tweaks-not-found-config.option.nonCollapsingMessages.tooltip" : "Semicolon separated list, NOTE: use &bs& instead of backspaces"
 }

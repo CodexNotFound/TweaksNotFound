@@ -7,6 +7,7 @@ import net.minecraft.client.util.ChatMessages;
 import net.minecraft.text.*;
 import net.minecraft.util.math.MathHelper;
 import nl.codexnotfound.tweaks_not_found.TweaksNotFound;
+import nl.codexnotfound.tweaks_not_found.config.ClockFormat;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -18,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -31,7 +33,7 @@ public class ChatMixin {
     @Shadow @Final private MinecraftClient client;
 
     private final Pattern COLLAPSE_CHAT_FORMAT_REGEX = Pattern.compile(" \\{×(\\d+)}");
-    private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}] ");
+    private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}( [AP]M)?] ");
 
     @ModifyArgs(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;I)V"))
     private void modifyArgsAddMessage(org.spongepowered.asm.mixin.injection.invoke.arg.Args args) {
@@ -152,10 +154,10 @@ public class ChatMixin {
     }
 
     private MutableText buildTimePrefix() {
-        var TIMESTAMP_FORMAT = "[%02d:%02d] ";
+        var format = TweaksNotFound.CONFIG.timeFormat() == ClockFormat.TwentyFour ? "HH:mm" : "hh:mm a";
 
-        var time = LocalTime.now();
-        var timeText = String.format(TIMESTAMP_FORMAT, time.getHour(), time.getMinute());
+        var time = LocalTime.now().format(DateTimeFormatter.ofPattern(format));
+        var timeText = String.format("[%s] ", time);
 
         return MutableText
                 .of(new LiteralTextContent(timeText));

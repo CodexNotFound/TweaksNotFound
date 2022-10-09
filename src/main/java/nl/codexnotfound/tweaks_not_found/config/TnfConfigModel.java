@@ -8,7 +8,9 @@ import io.wispforest.owo.config.annotation.SectionHeader;
 @Modmenu(modId = "tweaks_not_found")
 @Config(name="tweaks-not-found-config", wrapperName = "TweaksConfig")
 public class TnfConfigModel {
+    @SectionHeader("timestamp")
     public boolean showTimestamp = true;
+    public ClockFormat timeFormat = ClockFormat.TwentyFour;
 
     @SectionHeader("chatCollapsing")
     public boolean enableChatCollapsing = true;
