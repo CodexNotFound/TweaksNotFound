@@ -33,7 +33,7 @@ public class ChatMixin {
     @Shadow @Final private MinecraftClient client;
 
     private final Pattern COLLAPSE_CHAT_FORMAT_REGEX = Pattern.compile(" \\{×(\\d+)}");
-    private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}( [AP]M)?] ");
+    private final Pattern TIMESTAMP_FORMAT_REGEX = Pattern.compile("\\[\\d{2}:\\d{2}( [AP]M)?] ", Pattern.CASE_INSENSITIVE);
 
     @ModifyArgs(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;I)V"))
     private void modifyArgsAddMessage(org.spongepowered.asm.mixin.injection.invoke.arg.Args args) {
