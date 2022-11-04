@@ -9,5 +9,9 @@
   "text.config.tweaks-not-found-config.option.enableChatCollapsing" : "Chat collapsing",
   "text.config.tweaks-not-found-config.option.collapseDistance" : "Collapse distance",
   "text.config.tweaks-not-found-config.option.nonCollapsingMessages" : "Ignore collapsing for",
-  "text.config.tweaks-not-found-config.option.nonCollapsingMessages.tooltip" : "Semicolon separated list, NOTE: use &bs& instead of backspaces"
+  "text.config.tweaks-not-found-config.option.nonCollapsingMessages.tooltip" : "Semicolon separated list, NOTE: use &bs& instead of backspaces",
+  "text.config.tweaks-not-found-config.section.rejoin" : "Rejoin messages",
+  "text.config.tweaks-not-found-config.option.showRejoin" : "Enable rejoin messages",
+  "text.config.tweaks-not-found-config.option.showRejoin.tooltip" : "Joining after leaving shows 'rejoin' text instead",
+  "tweaks-not-found.multiplayer.player.rejoin" : "%s rejoined the game"
 }

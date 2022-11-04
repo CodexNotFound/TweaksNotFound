@@ -17,4 +17,7 @@ public class TnfConfigModel {
     @RangeConstraint(min = 1, max = 20)
     public int collapseDistance = 5;
     public String nonCollapsingMessages = "";
+
+    @SectionHeader("rejoin")
+    public boolean showRejoin = false;
 }
