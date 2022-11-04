@@ -33,6 +33,7 @@ public class ChatMixin {
     @Shadow @Final private List<ChatHudLine<Text>> messages;
     @Shadow @Final private List<ChatHudLine<OrderedText>> visibleMessages;
     @Shadow @Final private MinecraftClient client;
+
     @ModifyArgs(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/ChatHud;addMessage(Lnet/minecraft/text/Text;I)V"))
     private void modifyArgsAddMessage(org.spongepowered.asm.mixin.injection.invoke.arg.Args args) {
         MutableText msg = args.get(0);
