@@ -1,9 +1,9 @@
 package nl.codexnotfound.tweaks_not_found.config;
 
-import io.wispforest.owo.config.annotation.Config;
-import io.wispforest.owo.config.annotation.Modmenu;
-import io.wispforest.owo.config.annotation.RangeConstraint;
-import io.wispforest.owo.config.annotation.SectionHeader;
+import io.wispforest.owo.config.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Modmenu(modId = "tweaks_not_found")
 @Config(name="tweaks-not-found-config", wrapperName = "TweaksConfig")
@@ -20,4 +20,10 @@ public class TnfConfigModel {
 
     @SectionHeader("rejoin")
     public boolean showRejoin = false;
+
+    @SectionHeader("mentions")
+    public boolean enableMentions = false;
+
+    public List<String> mentionKeywords = new ArrayList<>();
+
 }

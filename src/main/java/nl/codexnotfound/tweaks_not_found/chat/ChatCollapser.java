@@ -8,6 +8,6 @@ import java.util.Collection;
 
 public interface ChatCollapser<T extends Text> {
 
-    boolean isMessageApplicable(T newMessage, Collection<ChatHudLine<Text>> historicMessages);
-    MutableText getNewMessage(T newMessage, Collection<ChatHudLine<Text>> historicMessages);
+    boolean isMessageApplicable(T incomingMessage, Collection<ChatHudLine<Text>> historicMessages);
+    MutableText getNewMessage(T incomingMessage, Collection<ChatHudLine<Text>> historicMessages);
 }
