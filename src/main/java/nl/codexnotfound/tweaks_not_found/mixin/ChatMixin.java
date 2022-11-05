@@ -9,6 +9,7 @@ import net.minecraft.util.math.MathHelper;
 import nl.codexnotfound.tweaks_not_found.TweaksNotFound;
 import nl.codexnotfound.tweaks_not_found.chat.ChatFormats;
 import nl.codexnotfound.tweaks_not_found.chat.ChatStringCleaner;
+import nl.codexnotfound.tweaks_not_found.chat.MentionChatCollapser;
 import nl.codexnotfound.tweaks_not_found.chat.RelogChatCollapser;
 import nl.codexnotfound.tweaks_not_found.config.ClockFormat;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +51,13 @@ public class ChatMixin {
             var timeText = buildTimePrefix();
             msg = timeText.append(msg.setStyle(style));
         }
+
+        var mentionChatCollapser = new MentionChatCollapser();
+        if(mentionChatCollapser.isMessageApplicable(msg, historicMessages)){
+            msg = mentionChatCollapser.getNewMessage(msg, historicMessages);
+        }
+
+
         args.set(0, msg);
     }
 
@@ -65,7 +73,7 @@ public class ChatMixin {
             var searchDistance = getSearchDistance();
 
             var newMessageText = message.getString();
-            var newMessageTextCleanedUp = newMessageText.replaceFirst(ChatFormats.TIMESTAMP_FORMAT_REGEX.pattern(), "").trim();
+            var newMessageTextCleanedUp = ChatStringCleaner.clean(newMessageText).trim();
 
             if (!shouldCollapseMessage(newMessageTextCleanedUp)) {
                 return;
