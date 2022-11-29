@@ -17,15 +17,18 @@ public class RelogChatCollapser implements ChatCollapser<MutableText> {
 
     @Override
     public boolean isMessageApplicable(MutableText newMessage, Collection<ChatHudLine<Text>> historicMessages) {
-        if(!TweaksNotFound.CONFIG.showRejoin())
+        if (!TweaksNotFound.CONFIG.showRejoin())
             return false;
 
         MutableText playerArg;
-        var content = (TranslatableTextContent) newMessage.getContent();
+        if (!(newMessage.getContent() instanceof TranslatableTextContent content)) {
+            return false;
+        }
+
         if (!content.getKey().equals(joinedGameTranslationKey)) {
             return false;
         } else {
-            playerArg = (MutableText)content.getArgs()[0];
+            playerArg = (MutableText) content.getArgs()[0];
         }
 
         var language = Language.getInstance();
@@ -34,7 +37,7 @@ public class RelogChatCollapser implements ChatCollapser<MutableText> {
         for (var historicMessage : historicMessages) {
             var text = historicMessage.getText().getString();
             text = ChatStringCleaner.clean(text);
-            if(text.equals(expectedString)){
+            if (text.equals(expectedString)) {
                 return true;
             }
         }
@@ -44,8 +47,8 @@ public class RelogChatCollapser implements ChatCollapser<MutableText> {
 
     @Override
     public MutableText getNewMessage(MutableText newMessage, Collection<ChatHudLine<Text>> historicMessages) {
-        var translatableText = (TranslatableTextContent)newMessage.getContent();
-        var playerArg = (MutableText)translatableText.getArgs()[0];
+        var translatableText = (TranslatableTextContent) newMessage.getContent();
+        var playerArg = (MutableText) translatableText.getArgs()[0];
         return Text.translatable(rejoinedGameTranslationKey, playerArg);
     }
 }
